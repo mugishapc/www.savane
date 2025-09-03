@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Rapport Hebdomadaire Savane Sprl</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #2c3e50; text-align: center; }
+        h2 { color: #34495e; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        .summary { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .positive { color: #27ae60; }
+        .negative { color: #c0392b; }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <h1>Rapport Hebdomadaire Savane Sprl</h1>
+    <p><strong>Période:</strong> {{ start_date.strftime('%Y-%m-%d') }} à {{ end_date.strftime('%Y-%m-%d') }}</p>
+
+    <div class="summary">
+        <h2>Résumé Financier(FINANCE GENERALE)</h2>
+        <p><strong>Total des Revenus:</strong> <span class="positive">{{ total_income|format_currency }}</span></p>
+        <p><strong>Total des Dépenses:</strong> <span class="negative">{{ total_expense|format_currency }}</span></p>
+        <p><strong>Solde:</strong> 
+            <span class="{% if balance >= 0 %}positive{% else %}negative{% endif %}">
+                {{ balance|format_currency }}
+            </span>
+        </p>
+        <p><strong>Total des Ventes:</strong> {{ total_sales|format_currency }}</p>
+    </div>
+
+    <h2>Revenus & Dépenses(COMPTABLE)</h2>
+    {% if income_expenses %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in income_expenses %}
+            <tr>
+                <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ record.description }}</td>
+                <td>{{ record.type|title }}</td>
+                <td>{{ record.amount|format_currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucun enregistrement de revenus/dépenses pour cette période.</p>
+    {% endif %}
+
+    <h2>Ventes(COMMERCIAL)</h2>
+    {% if sales %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>Prix Unitaire</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales %}
+            <tr>
+                <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ sale.product }}</td>
+                <td>{{ sale.quantity }}</td>
+                <td>{{ sale.unit_price|format_currency }}</td>
+                <td>{{ sale.total|format_currency }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No sales records for this period.</p>
+    {% endif %}
+
+    <h2>Movements de Stock(STOCK)</h2>
+    {% if stock_movements %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Produit</th>
+                <th>Quantité Entrante</th>
+                <th>Quantité Sortante</th>
+                <th>Changement Net</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movement in stock_movements %}
+            <tr>
+                <td>{{ movement.date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ movement.product }}</td>
+                <td>{{ movement.quantity_in }}</td>
+                <td>{{ movement.quantity_out }}</td>
+                <td>{{ movement.quantity_in - movement.quantity_out }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucun enregistrement de mouvements de stock pour cette période.</p>
+    {% endif %}
+    
+    <div class="footer">
+        <p>Report generated on {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        <p>Savane Management System</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-cart"></i> Tableau de Bord Commercial</h2>
+    <span class="badge bg-warning fs-6">Département Commercial</span>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Enregistrer une Nouvelle Vente</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.date.label(class="form-label") }}
+                        {{ form.date(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.product.label(class="form-label") }}
+                        {{ form.product(class="form-control", placeholder="Entrer le nom du produit") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.quantity.label(class="form-label") }}
+                        {{ form.quantity(class="form-control", placeholder="Entrer la quantité") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.unit_price.label(class="form-label") }}
+                        {{ form.unit_price(class="form-control", placeholder="Entrer le prix unitaire") }}
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-warning") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Sales Records</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Produit</th>
+                                <th>Quantité</th>
+                                <th>Prix Unitaire</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales %}
+                            <tr>
+                                <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ sale.product }}</td>
+                                <td>{{ sale.quantity }}</td>
+                                <td>{{ sale.unit_price|format_currency }}</td>
+                                <td>{{ sale.total|format_currency }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+{% endblock %}

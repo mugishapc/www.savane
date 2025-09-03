@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="bi bi-cart-plus"></i> Enregistrer la Vente</h4>
+                    <a href="{{ url_for('commercial_dashboard') }}" class="btn btn-light btn-sm">
+                        <i class="bi bi-arrow-left"></i> Retour au Tableau de Bord
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.date.label(class="form-label fw-bold") }}
+                                {{ form.date(class="form-control") }}
+                                {% if form.date.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.date.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.quantity.label(class="form-label fw-bold") }}
+                                {{ form.quantity(class="form-control", placeholder="Entrer la quantité") }}
+                                {% if form.quantity.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.quantity.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.unit_price.label(class="form-label fw-bold") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.unit_price(class="form-control", placeholder="0.00", step="0.01") }}
+                                </div>
+                                {% if form.unit_price.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.unit_price.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <div>
+                            Total amount will be calculated automatically (Quantity × Unit Price)
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-outline-secondary me-md-2">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </button>
+                        {{ form.submit(class="btn btn-warning") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Recent Sales -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                {% if sales %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales[:5] %}
+                            <tr>
+                                <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ sale.quantity }}</td>
+                                <td>${{ "%.2f"|format(sale.unit_price) }}</td>
+                                <td class="fw-bold">${{ "%.2f"|format(sale.total) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% if sales|length > 5 %}
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="text-center">
+                                    <a href="{{ url_for('commercial_dashboard') }}" class="btn btn-sm btn-outline-primary">
+                                        View all sales
+                                    </a>
+                                </td>
+                            </tr>
+                        </tfoot>
+                        {% endif %}
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-cart-x" style="font-size: 2rem;"></i>
+                    <p class="mt-2">No sales recorded yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for auto-calculation -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.querySelector('input[name="quantity"]');
+    const priceInput = document.querySelector('input[name="unit_price"]');
+    
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(value);
+    }
+    
+    function calculateTotal() {
+        if (quantityInput.value && priceInput.value) {
+            const quantity = parseInt(quantityInput.value);
+            const price = parseFloat(priceInput.value);
+            const total = quantity * price;
+            
+            // Show calculated total to user
+            let totalAlert = document.querySelector('.alert');
+            if (!totalAlert.querySelector('#calculated-total')) {
+                totalAlert.innerHTML += `<div id="calculated-total" class="mt-2 fw-bold">Total: ${formatCurrency(total)}</div>`;
+            } else {
+                document.getElementById('calculated-total').textContent = `Total: ${formatCurrency(total)}`;
+            }
+        }
+    }
+    
+    quantityInput.addEventListener('input', calculateTotal);
+    priceInput.addEventListener('input', calculateTotal);
+});
+</script>
+{% endblock %}

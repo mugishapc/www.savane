@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-calculator"></i> Tableau de Bord d'un Comptable</h2>
+    <span class="badge bg-info fs-6">Département Comptabilité</span>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i>Rapport Financière</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="accountingForm">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.date.label(class="form-label") }}
+                        {{ form.date(class="form-control", required=true) }}
+                        {% if form.date.errors %}
+                            <div class="text-danger">
+                                {% for error in form.date.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", placeholder="Entrer la motif", required=true) }}
+                        {% if form.description.errors %}
+                            <div class="text-danger">
+                                {% for error in form.description.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.amount.label(class="form-label") }}
+                        {{ form.amount(class="form-control", placeholder="Entrer le montant", required=true, min="0", step="0.01") }}
+                        {% if form.amount.errors %}
+                            <div class="text-danger">
+                                {% for error in form.amount.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.type.label(class="form-label") }}
+                        {{ form.type(class="form-select", required=true) }}
+                        {% if form.type.errors %}
+                            <div class="text-danger">
+                                {% for error in form.type.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="submitButton">
+                            <i class="bi bi-check-circle"></i> Ajouter un Rapport
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> Enregistrements Financiers</h5>
+                <span class="badge bg-light text-dark">{{ records|length }} rapports</span>
+            </div>
+            <div class="card-body">
+                {% if records %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th class="text-end">Revenus</th>
+                                <th class="text-end">Dépenses</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>{{ record.date }}</td>
+                                <td class="text-end">
+                                    {% if record.income %}
+                                        <span class="text-success fw-bold">BIF{{ record.income|format_currency }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if record.expense %}
+                                        <span class="text-danger fw-bold">BIF{{ record.expense|format_currency }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-receipt display-4 text-muted"></i>
+                    <p class="mt-3 text-muted">Aucun enregistrement financier trouvé. Ajoutez votre premier rapport à l'aide du formulaire.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add some custom JavaScript for better form handling -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('accountingForm');
+    const submitButton = document.getElementById('submitButton');
+    
+    form.addEventListener('submit', function() {
+        // Disable the submit button to prevent double submissions
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    });
+    
+    // Add today's date as default for the date field
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').value = today;
+});
+</script>
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+.card {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.5rem;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}

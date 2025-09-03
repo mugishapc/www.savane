@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up"></i> Finance Dashboard</h2>
+    <span class="badge bg-success fs-6">Finance Department</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Income</h5>
+                <h2 class="card-text">{{ total_income }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger mb-3 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Expenses</h5>
+                <h2 class="card-text">{{ total_expense }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title">Balance</h5>
+                <h2 class="card-text">{{ balance }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-list-check"></i> All Financial Records</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ record.description }}</td>
+                        <td>
+                            <span class="badge {% if record.type == 'income' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ record.type|title }}
+                            </span>
+                        </td>
+                        <td>{{ record.amount }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No financial records found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

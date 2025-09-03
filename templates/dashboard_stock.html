@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-boxes"></i> Tableau de Bord des Stocks</h2>
+    <span class="badge bg-info fs-6">Département des Stocks</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Enregistrer un Mouvement de Stock</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.date.label(class="form-label") }}
+                        {{ form.date(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.product.label(class="form-label") }}
+                        {{ form.product(class="form-control", placeholder="Entrer le nom du produit") }}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.quantity_in.label(class="form-label") }}
+                            {{ form.quantity_in(class="form-control", placeholder="Quantité entrante") }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.quantity_out.label(class="form-label") }}
+                            {{ form.quantity_out(class="form-control", placeholder="Quantité sortante") }}
+                        </div>
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-info text-white") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Niveaux de Stock Actuels</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produit</th>
+                                <th>Quantité Disponible</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product, quantity in products.items() %}
+                            <tr>
+                                <td>{{ product }}</td>
+                                <td>
+                                    <span class="badge {% if quantity > 10 %}bg-success{% elif quantity > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                                        {{ quantity }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center">Aucun enregistrement de stock trouvé</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historique des Mouvements de Stock</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Produit</th>
+                        <th>Quantité Entrante</th>
+                        <th>Quantité Sortante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in movements %}
+                    <tr>
+                        <td>{{ movement.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ movement.product }}</td>
+                        <td class="text-success">{{ movement.quantity_in }}</td>
+                        <td class="text-danger">{{ movement.quantity_out }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">Aucun mouvement de stock trouvé</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up"></i>DIRECTEUR GENERAL</h2>
+    <span class="badge bg-primary fs-6">DIRECTION GENERALE</span>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex gap-2 flex-wrap">
+                    
+                    <a href="{{ url_for('download_report') }}" class="btn btn-outline-success">
+                        <i class="bi bi-download"></i> Télécharger le Rapport Hebdomadaire (PDF)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Overview Card -->
+<div class="row mb-4">
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <div class="text-white-75 small">Utilisateurs Totale</div>
+                        <div class="text-lg fw-bold">{{ users|length }}</div>
+                    </div>
+                    <i class="bi bi-people-fill fa-2x text-white-50"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between small">
+                <a class="text-white stretched-link" href="{{ url_for('manage_users') }}">Gérer les Utilisateurs</a>
+                <div class="text-white"><i class="bi bi-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Overview -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Revenus</h6>
+                        <h3 class="card-text">{{ total_income|format_currency }}</h3>
+                    </div>
+                    <i class="bi bi-arrow-up-circle fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Dépenses</h6>
+                        <h3 class="card-text">{{ total_expense|format_currency }}</h3>
+                    </div>
+                    <i class="bi bi-arrow-down-circle fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Balance</h6>
+                        <h3 class="card-text">{{ balance|format_currency }}</h3>
+                    </div>
+                    <i class="bi bi-graph-up fs-1"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Stock Overview -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-boxes"></i> QUANTITE TOTALE DES PRODUITS EN STOCK</h5>
+            </div>
+            <div class="card-body">
+                {% if products %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Quantité Disponible</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product, quantity in products.items() %}
+                            <tr>
+                                <td>{{ product }}</td>
+                                <td>
+                                    <span class="badge {% if quantity > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ quantity }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">No stock records found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Financial Transactions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-list-check"></i> RAPPORT DU COMPTABLE</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Type</th>
+                                <th>Montant</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records[:10] %}
+                            <tr>
+                                <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ record.description }}</td>
+                                <td>
+                                    <span class="badge {% if record.type == 'income' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ record.type|title }}
+                                    </span>
+                                </td>
+                                <td>{{ record.amount|format_currency }}</td>
+                                <td>{{ record.user.full_name }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No financial records found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if records|length > 10 %}
+                <div class="text-end">
+                    <small class="text-muted">Showing 10 of {{ records|length }} records</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> RAPPORT DE STOCK</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Produit</th>
+                        <th>Quantité Entrant</th>
+                        <th>Quantité Sortant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in movements %}
+                    <tr>
+                        <td>{{ movement.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ movement.product }}</td>
+                        <td class="text-success">{{ movement.quantity_in }}</td>
+                        <td class="text-danger">{{ movement.quantity_out }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No stock movements found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+    
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> RAPPORT COMMERCIAL</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Produit</th>
+                                <th>Quantité</th>
+                                <th>Prix Unitaire</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales %}
+                            <tr>
+                                <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ sale.product }}</td>
+                                <td>{{ sale.quantity }}</td>
+                                <td>{{ sale.unit_price|format_currency }}</td>
+                                <td>{{ sale.total|format_currency }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No sales records found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
