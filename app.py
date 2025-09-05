@@ -9,7 +9,7 @@ from io import BytesIO
 from weasyprint import HTML
 from sqlalchemy import func
 from flask import send_from_directory, jsonify
-from app import app
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd29c234ca310aa6990092d4b6cd4c4854585c51e1f73bf4de510adca03f5bc4e'  
