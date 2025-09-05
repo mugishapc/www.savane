@@ -18,6 +18,14 @@ class RegistrationForm(FlaskForm):
         ('finance', 'Finance'),
         ('management', 'Management')
     ], validators=[DataRequired()])
+    role = SelectField('Role', choices=[
+        ('accounting', 'Accounting'),
+        ('agent_commercial', 'Agent Commercial'),
+        ('chef_commercial', 'Chef Commercial'),
+        ('stock', 'Stock'),
+        ('finance', 'Finance'),
+        ('management', 'Management')
+    ], validators=[DataRequired()])
     submit = SubmitField('Register')
 
 class EditUserForm(FlaskForm):
@@ -31,6 +39,15 @@ class EditUserForm(FlaskForm):
         ('finance', 'Finance'),
         ('management', 'Management')
     ], validators=[DataRequired()])
+    role = SelectField('Role', choices=[
+        ('accounting', 'Accounting'),
+        ('agent_commercial', 'Agent Commercial'),
+        ('chef_commercial', 'Chef Commercial'),
+        ('stock', 'Stock'),
+        ('finance', 'Finance'),
+        ('management', 'Management')
+    ], validators=[DataRequired()])
+    
     submit = SubmitField('Update User')
 
 class IncomeExpenseForm(FlaskForm):

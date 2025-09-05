@@ -5,7 +5,6 @@
     <h2><i class="bi bi-graph-up"></i>DIRECTEUR GENERAL</h2>
     <span class="badge bg-primary fs-6">DIRECTION GENERALE</span>
 </div>
-
 <!-- Quick Actions -->
 <div class="row mb-4">
     <div class="col-12">
@@ -15,10 +14,10 @@
             </div>
             <div class="card-body">
                 <div class="d-flex gap-2 flex-wrap">
-                    
-                    <a href="{{ url_for('download_report') }}" class="btn btn-outline-success">
-                        <i class="bi bi-download"></i> Télécharger le Rapport Hebdomadaire (PDF)
-                    </a>
+                    <a href="{{ url_for('select_report_dates') }}" class="btn btn-primary">
+        <i class="bi bi-download"></i> Télécharger le Rapport Personnalisé
+         <a class="nav-link" href="{{ url_for('install_guide') }}">Install App</a>
+    </a>
                 </div>
             </div>
         </div>
@@ -89,8 +88,8 @@
     </div>
 </div>
 
-
-    <!-- Stock Overview -->
+<!-- Stock Overview -->
+<div class="row mb-4">
     <div class="col-md-6">
         <div class="card shadow-sm">
             <div class="card-header bg-info text-white">
@@ -121,7 +120,7 @@
                     </table>
                 </div>
                 {% else %}
-                <p class="text-center">No stock records found</p>
+                <p class="text-center">Aucun enregistrement de stock trouvé</p>
                 {% endif %}
             </div>
         </div>
@@ -145,10 +144,11 @@
                                 <th>Type</th>
                                 <th>Montant</th>
                                 <th>User</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for record in records[:10] %}
+                            {% for record in records[:600000] %}
                             <tr>
                                 <td>{{ record.date.strftime('%Y-%m-%d') }}</td>
                                 <td>{{ record.description }}</td>
@@ -159,18 +159,23 @@
                                 </td>
                                 <td>{{ record.amount|format_currency }}</td>
                                 <td>{{ record.user.full_name }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-record" data-id="{{ record.id }}" data-type="income_expense">
+                                        <i class="bi bi-trash"></i> Supprimer
+                                    </button>
+                                </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="text-center">No financial records found</td>
+                                <td colspan="6" class="text-center">Aucun enregistrement financier trouvé</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                {% if records|length > 10 %}
+                {% if records|length > 600000 %}
                 <div class="text-end">
-                    <small class="text-muted">Showing 10 of {{ records|length }} records</small>
+                    <small class="text-muted">Affichage de 600000 sur {{ records|length }} enregistrements</small>
                 </div>
                 {% endif %}
             </div>
@@ -178,39 +183,48 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header bg-info text-white">
-        <h5 class="mb-0"><i class="bi bi-clock-history"></i> RAPPORT DE STOCK</h5>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>Date</th>
-                        <th>Produit</th>
-                        <th>Quantité Entrant</th>
-                        <th>Quantité Sortant</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for movement in movements %}
-                    <tr>
-                        <td>{{ movement.date.strftime('%Y-%m-%d') }}</td>
-                        <td>{{ movement.product }}</td>
-                        <td class="text-success">{{ movement.quantity_in }}</td>
-                        <td class="text-danger">{{ movement.quantity_out }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center">No stock movements found</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> RAPPORT DE STOCK</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Produit</th>
+                                <th>Quantité Entrant</th>
+                                <th>Quantité Sortant</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in movements %}
+                            <tr>
+                                <td>{{ movement.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ movement.product }}</td>
+                                <td class="text-success">{{ movement.quantity_in }}</td>
+                                <td class="text-danger">{{ movement.quantity_out }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-record" data-id="{{ movement.id }}" data-type="stock">
+                                        <i class="bi bi-trash"></i> Supprimer
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">Aucun mouvement de stock trouvé</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-</div>
     
     <div class="col-md-7">
         <div class="card shadow-sm">
@@ -227,6 +241,7 @@
                                 <th>Quantité</th>
                                 <th>Prix Unitaire</th>
                                 <th>Total</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -237,10 +252,15 @@
                                 <td>{{ sale.quantity }}</td>
                                 <td>{{ sale.unit_price|format_currency }}</td>
                                 <td>{{ sale.total|format_currency }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-record" data-id="{{ sale.id }}" data-type="sale">
+                                        <i class="bi bi-trash"></i> Supprimer
+                                    </button>
+                                </td>
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="text-center">No sales records found</td>
+                                <td colspan="6" class="text-center">Aucun enregistrement de vente trouvé</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -251,5 +271,72 @@
     </div>
 </div>
 
+<!-- JavaScript for delete functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all delete buttons
+    const deleteButtons = document.querySelectorAll('.delete-record');
+    
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const recordId = this.getAttribute('data-id');
+            const recordType = this.getAttribute('data-type');
+            
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet enregistrement ? Cette action est irréversible.')) {
+                // Send AJAX request to delete the record
+                fetch(`/delete_${recordType}/${recordId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // Reload the page to see the changes
+                        location.reload();
+                    } else {
+                        alert('Erreur: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Une erreur s\'est produite lors de la suppression.');
+                });
+            }
+        });
+    });
+});
+</script>
+
+<!-- Add this to your base.html file before the closing </body> tag -->
+<script>
+// Function to handle record deletion
+function deleteRecord(recordType, recordId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet enregistrement ? Cette action est irréversible.')) {
+        fetch(`/delete_${recordType}/${recordId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Reload the page to see the changes
+                location.reload();
+            } else {
+                alert('Erreur: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Une erreur s\'est produite lors de la suppression.');
+        });
+    }
+}
+</script>
 
 {% endblock %}

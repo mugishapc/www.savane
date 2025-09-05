@@ -2,73 +2,125 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-cart"></i> Tableau de Bord Commercial</h2>
-    <span class="badge bg-warning fs-6">Département Commercial</span>
+    <h2><i class="bi bi-cart"></i> Dashboard Commercial</h2>
+    <span class="badge bg-warning fs-6">
+        {% if user_role == 'chef_commercial' %}Chef Commercial{% else %}Agent Commercial{% endif %}
+    </span>
 </div>
 
-<div class="row">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Enregistrer une Nouvelle Vente</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST">
-                    {{ form.hidden_tag() }}
-                    <div class="mb-3">
+<p>Welcome, {{ current_user.full_name }} ({{ current_user.role }})</p>
+
+<!-- Sales Form (only for Agent Commercial) -->
+{% if user_role == 'agent_commercial' %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Enregistrer une Nouvelle Vente</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
                         {{ form.date.label(class="form-label") }}
                         {{ form.date(class="form-control") }}
                     </div>
-                    <div class="mb-3">
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
                         {{ form.product.label(class="form-label") }}
-                        {{ form.product(class="form-control", placeholder="Entrer le nom du produit") }}
+                        {{ form.product(class="form-control") }}
                     </div>
-                    <div class="mb-3">
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
                         {{ form.quantity.label(class="form-label") }}
-                        {{ form.quantity(class="form-control", placeholder="Entrer la quantité") }}
+                        {{ form.quantity(class="form-control") }}
                     </div>
-                    <div class="mb-3">
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
                         {{ form.unit_price.label(class="form-label") }}
-                        {{ form.unit_price(class="form-control", placeholder="Entrer le prix unitaire") }}
+                        {{ form.unit_price(class="form-control") }}
                     </div>
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-warning") }}
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        {{ form.submit(class="btn btn-primary form-control") }}
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-7">
-        <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Sales Records</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Produit</th>
-                                <th>Quantité</th>
-                                <th>Prix Unitaire</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sale in sales %}
-                            <tr>
-                                <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
-                                <td>{{ sale.product }}</td>
-                                <td>{{ sale.quantity }}</td>
-                                <td>{{ sale.unit_price|format_currency }}</td>
-                                <td>{{ sale.total|format_currency }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
                 </div>
             </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Today's Sales Summary (only for Chef Commercial) -->
+{% if user_role == 'chef_commercial' and product_totals %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Résumé des Ventes Aujourd'hui</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Quantité Vendue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product, quantity in product_totals.items() %}
+                    <tr>
+                        <td>{{ product }}</td>
+                        <td>{{ quantity }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Sales History -->
+<div class="card">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-clipboard-data"></i> Historique des Ventes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Produit</th>
+                        <th>Quantité</th>
+                        <th>Prix Unitaire</th>
+                        <th>Total</th>
+                        {% if user_role == 'chef_commercial' %}
+                        <th>Agent</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in sales %}
+                    <tr>
+                        <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ sale.product }}</td>
+                        <td>{{ sale.quantity }}</td>
+                        <td>{{ sale.unit_price|format_currency }}</td>
+                        <td>{{ sale.total|format_currency }}</td>
+                        {% if user_role == 'chef_commercial' %}
+                        <td>{{ sale.user.full_name }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}

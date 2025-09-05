@@ -7,6 +7,10 @@ import os
 import pdfkit
 from io import BytesIO
 from weasyprint import HTML
+from flask import send_from_directory
+from sqlalchemy import func
+from flask import jsonify
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd29c234ca310aa6990092d4b6cd4c4854585c51e1f73bf4de510adca03f5bc4e'  
@@ -35,6 +39,22 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+
+@app.route('/sw.js')
+def service_worker():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'manifest.json',
+        mimetype='application/json'
+    )
+@app.route('/offline.html')
+def offline():
+    return send_from_directory('templates', 'offline.html')
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -42,7 +62,7 @@ def load_user(user_id):
 def create_tables():
     with app.app_context():
         # First drop all tables to ensure clean schema
-        db.drop_all()
+         
         db.create_all()
         
         # Create default admin user if no users exist
@@ -94,7 +114,7 @@ def dashboard():
     
     if role == 'accounting':
         return redirect(url_for('accounting_dashboard'))
-    elif role == 'commercial':
+    elif role == 'agent_commercial' or role == 'chef_commercial':
         return redirect(url_for('commercial_dashboard'))
     elif role == 'stock':
         return redirect(url_for('stock_dashboard'))
@@ -134,7 +154,7 @@ def create_user():
             username=form.username.data,
             full_name=form.full_name.data,
             department=form.department.data,
-            role=form.department.data  # Role matches department for simplicity
+            role=form.role.data  # Use the role field instead of department
         )
         user.set_password(form.password.data)
         
@@ -196,7 +216,7 @@ def edit_user(user_id):
         user.username = form.username.data
         user.full_name = form.full_name.data
         user.department = form.department.data
-        user.role = form.department.data  # Role matches department
+        user.role = form.role.data  # Update role field
         
         # Update password if provided
         if form.password.data:
@@ -208,31 +228,78 @@ def edit_user(user_id):
     
     return render_template('edit_user.html', form=form, user=user)
 
-# Add route for downloading PDF report (admin only)
+# Add route for date selection form
+@app.route('/select_report_dates', methods=['GET', 'POST'])
+@login_required
+def select_report_dates():
+    if current_user.role != 'management':
+        return render_template('unauthorized.html')
+    
+    if request.method == 'POST':
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            
+            if start_date > end_date:
+                flash('La date de début doit être antérieure à la date de fin.', 'danger')
+                return render_template('select_report_dates.html')
+            
+            return redirect(url_for('download_report', start_date=start_date_str, end_date=end_date_str))
+            
+        except ValueError:
+            flash('Format de date invalide. Utilisez le format AAAA-MM-JJ.', 'danger')
+    
+    # Set default dates (last 7 days)
+    default_end_date = datetime.now()
+    default_start_date = default_end_date - timedelta(days=7)
+    
+    return render_template('select_report_dates.html', 
+                          default_start_date=default_start_date.strftime('%Y-%m-%d'),
+                          default_end_date=default_end_date.strftime('%Y-%m-%d'))
+
+# Add route for downloading PDF report with custom date range
 @app.route('/download_report')
 @login_required
 def download_report():
     if current_user.role != 'management':
         return render_template('unauthorized.html')
     
-    # Calculate date range (last 7 days)
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=7)
+    # Get date range from query parameters
+    start_date_str = request.args.get('start_date')
+    end_date_str = request.args.get('end_date')
+    
+    if not start_date_str or not end_date_str:
+        flash('Veuillez sélectionner une plage de dates.', 'danger')
+        return redirect(url_for('select_report_dates'))
+    
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+        
+        # Adjust end_date to include the entire day
+        end_date_with_time = end_date.replace(hour=23, minute=59, second=59)
+        
+    except ValueError:
+        flash('Format de date invalide.', 'danger')
+        return redirect(url_for('select_report_dates'))
     
     # Get data for the report
     income_expenses = IncomeExpense.query.filter(
         IncomeExpense.date >= start_date,
-        IncomeExpense.date <= end_date
+        IncomeExpense.date <= end_date_with_time
     ).all()
     
     sales = Sale.query.filter(
         Sale.date >= start_date,
-        Sale.date <= end_date
+        Sale.date <= end_date_with_time
     ).all()
     
     stock_movements = Stock.query.filter(
         Stock.date >= start_date,
-        Stock.date <= end_date
+        Stock.date <= end_date_with_time
     ).all()
     
     # Calculate totals
@@ -269,12 +336,63 @@ def download_report():
         return send_file(
             pdf_buffer,
             as_attachment=True,
-            download_name=f'savane_report_{end_date.strftime("%Y%m%d")}.pdf',
+            download_name=f'savane_report_{start_date.strftime("%Y%m%d")}_to_{end_date.strftime("%Y%m%d")}.pdf',
             mimetype='application/pdf'
         )
     except Exception as e:
         flash(f'Error generating PDF: {str(e)}', 'danger')
         return redirect(url_for('management_dashboard'))
+
+# Add route for deleting financial records (admin only)
+@app.route('/delete_income_expense/<int:record_id>', methods=['POST'])
+@login_required
+def delete_income_expense(record_id):
+    if current_user.role != 'management':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    record = IncomeExpense.query.get_or_404(record_id)
+    
+    try:
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Record deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting record: {str(e)}'}), 500
+
+# Add route for deleting sales records (admin only)
+@app.route('/delete_sale/<int:sale_id>', methods=['POST'])
+@login_required
+def delete_sale(sale_id):
+    if current_user.role != 'management':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    sale = Sale.query.get_or_404(sale_id)
+    
+    try:
+        db.session.delete(sale)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Sale record deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting sale record: {str(e)}'}), 500
+
+# Add route for deleting stock records (admin only)
+@app.route('/delete_stock/<int:stock_id>', methods=['POST'])
+@login_required
+def delete_stock(stock_id):
+    if current_user.role != 'management':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
+    
+    stock = Stock.query.get_or_404(stock_id)
+    
+    try:
+        db.session.delete(stock)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Stock record deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error deleting stock record: {str(e)}'}), 500
 
 @app.route('/dashboard/accounting', methods=['GET', 'POST'])
 @login_required
@@ -319,11 +437,13 @@ def accounting_dashboard():
 @app.route('/dashboard/commercial', methods=['GET', 'POST'])
 @login_required
 def commercial_dashboard():
-    if current_user.role != 'commercial':
+    if current_user.role not in ['agent_commercial', 'chef_commercial']:
         return render_template('unauthorized.html')
     
     form = SaleForm()
-    if form.validate_on_submit():
+    
+    # Only show form for agent_commercial, not for chef_commercial
+    if form.validate_on_submit() and current_user.role == 'agent_commercial':
         total = form.quantity.data * form.unit_price.data
         sale = Sale(
             date=datetime.combine(form.date.data, datetime.min.time()),
@@ -338,8 +458,43 @@ def commercial_dashboard():
         flash('Sale recorded successfully!', 'success')
         return redirect(url_for('commercial_dashboard'))
     
-    sales = Sale.query.order_by(Sale.date.desc()).all()
-    return render_template('dashboard_commercial.html', form=form, sales=sales)
+    # Get sales data based on user role
+    if current_user.role == 'chef_commercial':
+        # Chef Commercial sees all sales
+        sales = Sale.query.order_by(Sale.date.desc()).all()
+        
+        # Calculate today's sales by product
+        today = datetime.now().date()
+        today_sales = Sale.query.filter(
+            func.date(Sale.date) == today
+        ).all()
+        
+        # Calculate total sales by product for today
+        product_totals = {}
+        for sale in today_sales:
+            if sale.product not in product_totals:
+                product_totals[sale.product] = 0
+            product_totals[sale.product] += sale.quantity
+        
+    else:
+        # Agent Commercial sees only their own sales
+        sales = Sale.query.filter_by(user_id=current_user.id).order_by(Sale.date.desc()).all()
+        
+        # Calculate today's sales by product for this agent
+        today = datetime.now().date()
+        today_sales = Sale.query.filter(
+            Sale.user_id == current_user.id,
+            func.date(Sale.date) == today
+        ).all()
+        
+        # Calculate total sales by product for today
+        product_totals = {}
+        for sale in today_sales:
+            if sale.product not in product_totals:
+                product_totals[sale.product] = 0
+            product_totals[sale.product] += sale.quantity
+    
+    return render_template('dashboard_commercial.html', form=form, sales=sales, product_totals=product_totals, user_role=current_user.role)
 
 @app.route('/dashboard/stock', methods=['GET', 'POST'])
 @login_required
@@ -461,7 +616,7 @@ def record_income_expense():
 @app.route('/record/sale', methods=['GET', 'POST'])
 @login_required
 def record_sale():
-    if current_user.role != 'commercial':
+    if current_user.role != 'agent_commercial':
         return render_template('unauthorized.html')
     
     form = SaleForm()
@@ -480,7 +635,9 @@ def record_sale():
         flash('Sale recorded successfully!', 'success')
         return redirect(url_for('record_sale'))
     
-    sales = Sale.query.order_by(Sale.date.desc()).all()
+    # Get sales based on user role
+    sales = Sale.query.filter_by(user_id=current_user.id).order_by(Sale.date.desc()).all()
+    
     return render_template('record_sale.html', form=form, sales=sales)
 
 @app.route('/record/stock', methods=['GET', 'POST'])
@@ -521,6 +678,11 @@ def format_currency(value):
     except (ValueError, TypeError):
         return value
 
+@app.route('/install')
+def install_guide():
+    return render_template('install.html')
+
+
 if __name__ == '__main__':
     create_tables()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
