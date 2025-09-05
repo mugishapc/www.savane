@@ -7,9 +7,8 @@ import os
 import pdfkit
 from io import BytesIO
 from weasyprint import HTML
-from flask import send_from_directory
 from sqlalchemy import func
-from flask import jsonify
+from flask import send_from_directory, jsonify
 
 
 app = Flask(__name__)
@@ -171,7 +170,7 @@ def create_user():
 @login_required
 def delete_user(user_id):
     if current_user.role != 'management':
-        return render_template('unauthorized.html')
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     user_to_delete = User.query.get_or_404(user_id)
     
@@ -683,6 +682,21 @@ def install_guide():
     return render_template('install.html')
 
 
-if __name__ == '__main__':
-    create_tables()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    # Log the error
+    app.logger.error(f"Unhandled exception: {error}")
+    return render_template('500.html'), 500
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
