@@ -7,10 +7,8 @@ import os
 import pdfkit
 from io import BytesIO
 from weasyprint import HTML
-from flask import send_from_directory
 from sqlalchemy import func
-from flask import jsonify
-
+from flask import send_from_directory, jsonify
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'd29c234ca310aa6990092d4b6cd4c4854585c51e1f73bf4de510adca03f5bc4e'  
@@ -681,6 +679,21 @@ def format_currency(value):
 @app.route('/install')
 def install_guide():
     return render_template('install.html')
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    # Log the error
+    app.logger.error(f"Unhandled exception: {error}")
+    return render_template('500.html'), 500
 
 
 if __name__ == '__main__':
