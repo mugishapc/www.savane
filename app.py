@@ -171,7 +171,7 @@ def create_user():
 @login_required
 def delete_user(user_id):
     if current_user.role != 'management':
-        return render_template('unauthorized.html')
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 403
     
     user_to_delete = User.query.get_or_404(user_id)
     
