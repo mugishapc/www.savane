@@ -166,7 +166,7 @@ def create_user():
     return render_template('create_user.html', form=form)
 
 # Add user deletion route
-@app.route("/delete_user/<int:id>", methods=["GET", "POST"])
+@app.route("/delete_user/<int:user_id>", methods=["POST"])
 @login_required
 def delete_user(user_id):
     if current_user.role != 'management':
